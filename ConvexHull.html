@@ -62,7 +62,7 @@
             style: "solid",
             color: [115, 76, 0, 255],
             outline: {
-                color: [255, 255, 255], // white
+                color: [255, 255, 255], 
                 width: 1
             }
         };
@@ -81,10 +81,7 @@
 
             calculateConvexHull(points,convexHullArray);
             convertPoints(pointArray,convexHullArray);
-            
-            console.log("geldim");
-            console.log(pointArray);
-            
+                    
             var ringsArray = [];
 
             for(var k = 0; k<pointArray.length;k++){
@@ -98,9 +95,6 @@
               type:"polygon",
               rings: ringsArray
             };
-
-            console.log(convexPolygon);
-            console.log("geldim2");
             
             var convexGraphic = new Graphic({
 
@@ -109,18 +103,17 @@
 
             });
 
-            console.log(convexGraphic);
-            console.log("geldim3");
-
             polygonLayer.add(convexGraphic);
-
+            area(convexGraphic);
           }
         );
 
         view.ui.add(btn_convexHull,"top-left");        
         
-      function convertPoints(pointArray,convexHullArray){
-          console.log(convexHullArray[1]);
+        //Converts GeoJSON point array to JSON  
+
+        function convertPoints(pointArray,convexHullArray){
+          
           for(var b =0;b<convexHullArray.length;b++){
            
             var point = {
@@ -131,6 +124,8 @@
             pointArray.push(point);
           }
         }
+
+        //Convex Hull algorithm of Jarvis March
 
         function calculateConvexHull(points,finalArray){
 
@@ -180,6 +175,9 @@
             return 2;
           }
         }
+
+        //Finds left most point and index of the given GeoJSON array 
+
         function findLeftMost(points){
          
           var leftPoint = new Point();
@@ -197,6 +195,114 @@
           }
           return leftPoint;
         }
+        //////////////////////////////////////////////////////////////////////////////////////////
+        //
+        //Calculates the area of given polygon in three different ways
+        //
+        //****************************************************************************************
+        //
+        //1 --> Using turf function
+        //https://turfjs.org/docs/#area
+        //
+        //****************************************************************************************
+        //
+        //2 --> Using area of a polygon on a sphere approximation
+        //https://trs.jpl.nasa.gov/bitstream/handle/2014/41271/07-0286.pdf?sequence=1&isAllowed=y
+        //
+        //****************************************************************************************
+        //
+        //3 --> Using determinant formula
+        //https://www.mathopenref.com/coordpolygonarea.html
+        //
+        //////////////////////////////////////////////////////////////////////////////////////////
+
+        function area(polygonGraph){
+          
+          var polygon = polygonGraph.geometry;
+
+          var areaTurf = turf.area(esriGraphicToGeoJSON(polygonGraph));
+          console.log("Area by using turf function: "+areaTurf+" m^2");
+          
+          var size = polygon.rings[0].length;
+          var coordinates = polygon.rings[0];
+
+          console.log("Area by using my function: "+ringArea(coordinates)+" m^2");
+          
+          var areaDeterminant = 0;
+          var j,i;
+
+          j = size-1; // starts from the end 
+          
+          var X = [];
+          var Y = [];
+
+          for(var k=0;k<size;k++){
+            
+            X.push(polygon.rings[0][k][0]);
+            Y.push(polygon.rings[0][k][1]);
+          }
+          for(var i = 0;i<size;i++){
+
+            areaDeterminant += (X[j]+X[i]) * (Y[j]-Y[i]); 
+            j = i;
+          } 
+          console.log("Area by using determinant formula: "+areaDeterminant/2);
+        } 
+        
+        const RADIUS = 6378137;
+               
+        //https://npm.runkit.com/@turf/area/index.js?t=1561466746243
+
+        function ringArea(coords) {
+
+          var p1;
+          var p2;
+          var p3;
+          var lowerIndex;
+          var middleIndex;
+          var upperIndex;
+          var i;
+          var total = 0;
+          var coordsLength = coords.length;
+
+          if (coordsLength > 2) {
+            
+            for (i = 0; i < coordsLength; i++) {
+              
+              if (i === coordsLength - 2) {
+                lowerIndex = coordsLength - 2;
+                middleIndex = coordsLength - 1;
+                upperIndex = 0;
+              }
+              else if (i === coordsLength - 1) {
+                lowerIndex = coordsLength - 1;
+                middleIndex = 0;
+                upperIndex = 1;
+              }
+              else {
+                lowerIndex = i;
+                middleIndex = i + 1;
+                upperIndex = i + 2;
+              }
+              
+              p1 = coords[lowerIndex];
+              p2 = coords[middleIndex];
+              p3 = coords[upperIndex];
+              total += (rad(p3[0]) - rad(p1[0])) * Math.sin(rad(p2[1]));
+            }
+        
+          total = total * RADIUS * RADIUS / 2;
+          }
+          return total;
+        }
+        
+        //converts given number to radian
+
+        function rad(num) {
+          return num * Math.PI / 180;
+        }
+
+        //Takes GeoJSON points arrays and puts them to graphics layer
 
         function addPoints(points){
 
@@ -235,6 +341,10 @@
 
             });
         }
+
+        //////////////////////////////////////////////
+        //JSON to GeoJSON Functions
+        /////////////////////////////////////////////
 
         function esriGraphicToGeoJSON(data){
 
