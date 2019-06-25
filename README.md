@@ -1,5 +1,6 @@
 # Convex-Hull-Calculation-with-Gift-Wrapping-Algorithm
 This was a small school project of finding Convex Hull of given set of points by using Gift Wrapping Algorithm of Jarvis March.
+Both C and JS files added to the file.
 
 Checkout this page for further details.
 https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
